@@ -84,7 +84,7 @@ The following code carries out the steps described above.
 
 The following code will set up a directory structure in the local working directory in which to download the external data and write the output. Please modify as necessary.
 
-```{r, eval = FALSE}
+```
 dir.create('input_data/NLCD')
 dir.create('output_tifs')
 dir.create('temp_files')
@@ -94,7 +94,7 @@ dir.create('temp_files')
 
 The following Bash code downloads and unzips the two NLCD rasters (impervious surface and impervious surface descriptor).
 
-```{bash, eval = FALSE}
+```
 wget https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2016_impervious_l48_20210604.zip -P input_data/NLCD
 wget https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2016_impervious_descriptor_l48_20210604.zip -P input_data/NLCD
 unzip input_data/NLCD/nlcd_2016_impervious_l48_20210604.zip
@@ -103,7 +103,7 @@ unzip input_data/NLCD/nlcd_2016_impervious_descriptor_l48_20210604.zip
 
 The following code creates virtual rasters (`.vrt`) from the `.img` raster file. This allows parallel reads to be done on the NLCD raster so that multiple counties can be processed at the same time.
 
-```{r, eval = FALSE}
+```
 library(gdalUtils)
 
 direc <- 'input_data/NLCD'
@@ -131,7 +131,7 @@ It does the following steps for a single county (described more fully above):
 *Note*: This requires a valid U.S. Census Bureau API key to be saved in the current working directory in a file named `censusapikey.txt`.
 Sign up for a key using [the Census API key signup form](https://api.census.gov/data/key_signup.html).
 
-```{r, eval = FALSE}
+```
 Get_Dasy_Data <- function(stid, ctyid, imp_raster_file, imp_desc_raster_file) {
   
   # Albers equal-area projection
@@ -220,7 +220,7 @@ The following code block loads the necessary R packages. The object `fips_codes`
 It contains the two-digit state FIPS code and the three-digit county FIPS code for each county in the United States.
 We removed all counties not in the 48 contiguous United States and District of Columbia. In addition, we removed the two anomalous counties described above.
 
-```{r, eval = FALSE}
+```
 # Load packages
 library(tidycensus)
 library(tidyverse)
@@ -261,7 +261,7 @@ THe following code block defines a function to wrap around `Get_Dasy_Data()` and
 This is necessary to avoid parallel read on a single raster file (temporary files created by functions in the `tidycensus` package). 
 Then, the function is run in parallel on a Slurm cluster.
 
-```{r, eval = FALSE}
+```
 # Function to run all counties in a state
 get_dasy_all_counties <- function(fips) {
   walk(fips$ctyid, ~ Get_Dasy_Data(stid = fips$stid[1], ctyid = ., 
@@ -285,7 +285,7 @@ Refer to pg. 3 of [this documentation](https://www.ddorn.net/data/FIPS_County_Co
 For Oglala Lakota, we download data for FIPS code 46113 for 2010, and 46102 for 2016.
 For Bedford, we merge data from 51515 and 51019 for 2010, and download data for 51019 for 2016.
 
-```{r, eval = FALSE}
+```
 bad_counties <- data.frame(stid = c('46','46','51'),
                            ctyid = c('102', '113', '515'))
 
@@ -454,7 +454,7 @@ writeRaster(dasy.pop, filename, overwrite = TRUE, NAflag = -9999) # Will overwri
 
 The following code block is a set of Bash shell commands to mosaic the county-level GeoTIFF together as a virtual raster with `gdalbuildvrt`. Next, `gdal_translate` converts the virtual raster to a single large GeoTIFF.
 
-```{bash, eval = FALSE}
+```
 cd output_tifs
 gdalbuildvrt dasy_conus_2021-08-26.vrt *.tif
 gdal_translate -co COMPRESS=LZW -co BIGTIFF=YES -of GTiff dasy_conus_2021-08-26.vrt dasy_conus_2021-08-26.tif

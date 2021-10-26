@@ -5,10 +5,6 @@ date: "10/25/2021"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-```
-
 For the case study, we explored how the method used to dasymetrically estimate population distribution might affect policy-relevant inference. We investigated two key environmental hazards: wildfire and coastal flooding. Raster data products are available for both wildfire and coastal flooding. The U.S. Forest Service produced a map of wildfire hazard potential (WHP) for the contiguous United States at 270-meter pixel resolution, with five risk categories (Dillon et al. 2015). The U.S. Federal Emergency Management Agency (FEMA) has released flood risk data products for many U.S. counties, including the water surface elevation (WSE) for a 1% flood event (expected to occur once every 100 years). The WSE product is provided at 10-meter pixel resolution (FEMA 2021).
 
 For each of the two hazard categories, we compared estimation methods from four different sources: the present study, the U.S. Environmental Protection Agency (EPA; Pickard et al. 2015), Huang et al. (2021), and Facebook/CIESIN (Tiecke et al. 2017). In addition, we compared all the methods to a fifth baseline method: assuming that individuals are evenly distributed across the entire geographical area of a Census block group (Zandbergen et al. 2011).
@@ -40,7 +36,7 @@ Note in particular that the FEMA 1% flood water surface elevation raster files f
 
 This code block defines the county names and FIPS codes used for the case studies.
 
-```{r}
+```
 counties_wildfire <- read.delim(textConnection('
 county_name	state_name	state	state_code	county_code
 Daggett County	Utah	UT	49	009
@@ -59,7 +55,7 @@ Alabama	Baldwin	01003	01	003	input_data/FRD/FRD_01003C_GeoTIFFS_20190321/FRD_010
 
 This code block creates the directory structure to hold the external data objects. Download and extract them to the appropriate directory.
 
-```{r}
+```
 dir.create('input_data/epadasy')
 dir.create('input_data/huang_grid')
 dir.create('input_data/facebookpop')
@@ -76,7 +72,7 @@ We clipped the WHP raster layer and the population raster layers (U.S. EPA, Huan
 
 This code block loads the R packages needed.
 
-```{r, message = FALSE, warning = FALSE}
+```
 library(stars)
 library(sf)
 library(purrr)
@@ -99,7 +95,7 @@ counties_wildfire <- counties_wildfire %>% mutate(fips = paste0(state_code, coun
 
 This code block creates individual GeoPackage shapefiles for the boundaries of each county (Albers equal-area projection). In addition a shapefile in unprojected latitude-longitude coordinates is created for each county for use with the unprojected population raster provided by Facebook.
 
-```{r, eval = FALSE}
+```
 gpkgpath <- "input_data/countybounds"
 raster_proj <- gdalsrsinfo('input_data/facebookpop/population_usa_2019-07-01.vrt', as.CRS = TRUE)
 
@@ -121,7 +117,7 @@ pwalk(all_fips, function(state_code, county_code) {
 
 Our dasymetric rasters and the flood risk rasters are already in separate files for each county. The following code block creates separate raster files for the wildfire raster, the EPA dasymetric raster, the Facebook raster, and the Huang et al. population grid. We also ensure that our dasymetric raster matches the long-lat geographic CRS by creating a new version.
 
-```{r, eval = FALSE}
+```
 tifpath <- "input_data/countyrasters"
 gpkgpath <- "input_data/countybounds"
 
@@ -157,7 +153,7 @@ pwalk(all_fips, function(state_code, county_code) {
 
 In this code block, the environmental and population rasters are read into R as `stars` objects.
 
-```{r, eval = FALSE}
+```
 tifpath <- 'input_data/countyrasters'
 dasypath <- 'output_tifs'
 
@@ -176,7 +172,7 @@ fbpop_rasters_fl <- map(counties_flood$fips, ~ read_stars(glue('{tifpath}/county
 
 In this code block, we obtain the census block group population estimates and geographies from the U.S. Census Bureau API. Note that this requires a valid Census API key. These will be used for the block group area-weighting population estimate. The flood risk rasters have a different coordinate reference system for each county, so the block group population polygons are transformed each to a different one.
 
-```{r, eval = FALSE}
+```
 get_blockgroup_pop <- function(FIPS, crs) {
  
   pop <- get_acs(geography = "block group", variables = "B01003_001", 
@@ -201,7 +197,7 @@ blockgroup_pops_fl <- map2(counties_flood$fips, crs_flood, get_blockgroup_pop)
 
 In the following code block, we use `st_as_sf()` to convert the wildfire raster and flood raster (converted to binary) to polygons. The job is run in parallel on a Slurm cluster due to high memory requirements.
 
-```{r, eval = FALSE}
+```
 sjob_wild <- slurm_map(wildfire_rasters, st_as_sf, jobname = 'wf_to_poly', 
                        nodes = 2, cpus_per_node = 4,
                        as_points = FALSE, merge = TRUE)
@@ -232,7 +228,7 @@ cleanup_files(sjob_flood)
 
 In this code block, we convert the polygons to each of the rasters' coordinate reference systems. We correct invalid geometries in the lat-long polygons using `st_make_valid()`.
 
-```{r, eval = FALSE}
+```
 wildfire_polygons_ourdasycrs <- map(wildfire_polygons, st_transform, crs = st_crs(ourdasy_rasters_wf[[1]]))
 wildfire_polygons_epadasycrs <- map(wildfire_polygons, st_transform, crs = st_crs(epadasy_rasters_wf[[1]]))
 wildfire_polygons_huangcrs <- map(wildfire_polygons, st_transform, crs = st_crs(huang_rasters_wf[[1]]))
@@ -254,7 +250,7 @@ We overlaid the polygonized wildfire and flood layers onto the population raster
 
 In this code block, we define a function to aggregate the raster pixels by polygon for each population estimation method, then apply it in parallel on a Slurm cluster to each county.
 
-```{r, eval = FALSE}
+```
 aggregate_by_poly <- function(i, type, suffix) {
   sums_ourdasy <- aggregate(get(paste0('ourdasy_rasters_', suffix))[[i]], get(paste0(type,'_polygons_ourdasycrs'))[[i]], FUN = sum, na.rm = TRUE) %>%
     st_as_sf() %>% st_drop_geometry()
@@ -299,7 +295,7 @@ The method was slightly different for wildfire risk and flood risk. For wildfire
 
 In the following code block, we define the function to generate the tables for each block group polygon and apply it to the wildfire raster for each county in the wildfire case study.
 
-```{r, eval = FALSE}
+```
 table_by_polygon <- function(env_raster, bg_pop_poly) {
   map(st_geometry(bg_pop_poly), ~ as.data.frame(table(st_crop(env_raster, .)[[1]], useNA = 'always')))
 }
@@ -317,7 +313,7 @@ wildfire_sums_blockgroups <- map2(wildfire_tables_blockgroups, blockgroup_pops_w
 
 In this code block, we define the function to calculate area of intersection of the flood risk polygons and block group polygons, and apply it in parallel on a Slurm cluster to each of the counties in the flood risk case study.
 
-```{r, eval = FALSE}
+```
 get_blockgroup_sums <- function(bg_pop, env_poly, env_crs) {
   env_poly <- st_make_valid(env_poly)
   bg_pop %>%
@@ -343,7 +339,7 @@ cleanup_files(sjob_flood_block)
 
 In this code block, we find the total Census population for each county and join it to the county lookup table, and generate informative labels for the final figure.
 
-```{r, eval = FALSE}
+```
 wildfire_pop_totals <- map_dbl(blockgroup_pops_wf, ~ sum(.$estimate))
 flood_pop_totals <- map_dbl(blockgroup_pops_fl, ~ sum(.$estimate))
 
@@ -364,7 +360,7 @@ counties_flood <- counties_flood %>%
 
 In this code block, we define a function to calculate grand totals of the risk classes for each county, then apply it to each county in the wildfire case study. Grand totals for the block group area-weighted method are calculated with a different function.
 
-```{r, eval = FALSE}
+```
 grandtotal_classes <- function(env_poly, pop_sums) {
   data.frame(env_class = env_poly[[1]], pop_sums) %>%
     mutate(env_class = as.character(env_class)) %>%
@@ -391,7 +387,7 @@ wildfire_grandtotals <- counties_wildfire %>%
 
 In this code block, we do the same for the flood risk case study, again using a different function for the block group area-weighted method.
 
-```{r, eval = FALSE}
+```
 flood_grandtotals <- map2(flood_polygons, flood_sums, grandtotal_classes)
 
 get_blockgroup_grandtotals <- function(env_sums) {
@@ -418,7 +414,7 @@ save(list = c('wildfire_grandtotals', 'flood_grandtotals'), file = 'temp_files/g
 
 In this code block, we prepare the data for figure generation. First, we reshape the data to long form for plotting. We also simplify the wildfire risk classes into binary by summing all individuals in risk classes 3, 4, and 5 (medium to very high risk), considering them all to be "at risk."
 
-```{r, message = FALSE, warning = FALSE}
+```
 load(file = 'temp_files/grandtotals_finalfig.RData')
 
 label_names <- c('This study', 'U.S. EPA', 'Huang et al.', 'Facebook', 'Block group area weighting')
@@ -452,7 +448,7 @@ flood_risks_reduced <- flood_risks_long %>%
 
 The following code block creates the two dot plots, one for flood risk and one for wildfire risk.
 
-```{r, message = FALSE, warning = FALSE}
+```
 okabe_colors <- palette.colors(7, palette = 'Okabe-Ito')[c(7, 3, 4, 2, 1)]
 
 p_flood <- flood_risks_reduced %>%
@@ -497,7 +493,7 @@ ggplot(aes(x = county_label, y = population, color = estimate_label)) +
 
 The following code generates the inset maps and draws them along the margins of the plot panels.
 
-```{r, fig.width = 6, fig.height = 6, message = FALSE, warning = FALSE}
+```
 countymaps <- us_counties(resolution = 'high') %>%
   st_transform(3857) %>%
   mutate(fips = paste0(statefp, countyfp))

@@ -5,10 +5,6 @@ date: "10/25/2021"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
-```
-
 This document contains the code to create the methods figure illustrating intermediate steps in the dasymetric estimation process.
 
 The four panels of the figure represent the following steps in the process:
@@ -21,7 +17,7 @@ The four panels of the figure represent the following steps in the process:
 
 ## Setup: load packages
 
-```{r, eval = FALSE}
+```
 library(tidycensus)
 library(tidyverse)
 library(raster)
@@ -39,9 +35,9 @@ ctyid <- '003'
 
 ## Produce data for map
 
-This section is adapted from the main function given in `dasypop_methods.Rmd`.
+This section is adapted from the main function given in `dasypop_methods.md`.
 
-```{r, eval = FALSE}
+```
 imp_raster_file <- 'nlcd_2016_impervious_l48_20210604.img'
 imp_desc_raster_file <- 'nlcd_2016_impervious_descriptor_l48_20210604.img'
 
@@ -117,7 +113,7 @@ dasy.pop <- (bg.sum.pop/bg.sum.RISA) * RISA
 
 First create a slightly modified reclassification table to better illustrate how roads are masked out.
 
-```{r, eval = FALSE}
+```
 # Reclassify road versus not road
 reclass.table2 <- matrix(c(1,6,1,7,11,2), ncol = 3, byrow = TRUE) 
 
@@ -127,7 +123,7 @@ imp.roads.p2 <- projectRaster(imp.roads2, lu.ratio.zp, method = 'ngb')#have to r
 
 Next convert the `raster` objects to `stars` for plotting.
 
-```{r, eval = FALSE}
+```
 lu_stars <- st_as_stars(lu)
 imp_stars <- st_as_stars(imp.roads.p2)
 imp_stars[[1]] <- as.character(imp_stars[[1]])
@@ -140,7 +136,7 @@ dasy_stars <- st_as_stars(dasy.pop)
 
 The following plotting code requires background imagery available through NEON. It is not provided in this repository but similar imagery can be easily substituted.
 
-```{r, eval = FALSE}
+```
 box_x <- c(-76.60, -76.505)
 box_y <- c(38.90, 38.93)
 
