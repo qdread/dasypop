@@ -257,7 +257,7 @@ fips_list <- fipscodes %>% group_by(stid) %>% group_split
 
 ## Apply function to all counties
 
-THe following code block defines a function to wrap around `Get_Dasy_Data()` and run it for each county in a state in succession. 
+The following code block defines a function to wrap around `Get_Dasy_Data()` and run it for each county in a state in succession. 
 This is necessary to avoid parallel read on a single raster file (temporary files created by functions in the `tidycensus` package). 
 Then, the function is run in parallel on a Slurm cluster.
 
