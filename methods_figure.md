@@ -38,8 +38,8 @@ ctyid <- '003'
 This section is adapted from the main function given in `dasypop_methods.md`.
 
 ```
-imp_raster_file <- 'nlcd_2016_impervious_l48_20210604.img'
-imp_desc_raster_file <- 'nlcd_2016_impervious_descriptor_l48_20210604.img'
+imp_raster_file <- 'input_data/NLCD/NLCD_2016_impervious.vrt'
+imp_desc_raster_file <- 'input_data/NLCD/NLCD_2016_impervious_descriptor.vrt'
 
 # Albers equal-area projection
 aea <- '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
@@ -140,7 +140,7 @@ The following plotting code requires background imagery available through NEON. 
 box_x <- c(-76.60, -76.505)
 box_y <- c(38.90, 38.93)
 
-sercimage_raster <- stack('/nfs/qread-data/DASY/neon_imagery/2017_SERC_3_all_5m_UTM_geo.tif')
+sercimage_raster <- stack('2017_SERC_3_all_5m_UTM_geo.tif')
 
 plot_box <- st_as_sf(data.frame(x = box_x, y = box_y), coords = c('x', 'y'), crs = 4326) %>%
   st_transform(crs = aea) %>%

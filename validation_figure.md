@@ -44,6 +44,7 @@ Torrance County	New Mexico	NM	35	057
 Duchesne County	Utah	UT	49	013
 Chelan County	Washington	WA	53	007
 Ada County	Idaho	ID	16	001'), colClasses = 'character')
+
 counties_flood <- read.delim(textConnection('
 state_name	county_name	fips	state_code	county_code	wse_filename
 Maryland	Anne Arundel	24003	24	003	input_data/FRD/FRD_24003C_Coastal_GeoTIFFs_20150909/WSE_01pct.tif

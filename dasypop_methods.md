@@ -23,7 +23,7 @@ and population counts at the U.S. Census block level derived from the 2010 decen
 We also obtained the geographical boundaries of blocks and block groups from the Census API.
 
 The MRLC data products we used are the NLCD Percent Developed Imperviousness product for 2016 for the contiguous United
-States, and the NLCD Impervious Surface Descriptor product for 2016 for the contiguous United States. See Table.
+States, and the NLCD Impervious Surface Descriptor product for 2016 for the contiguous United States. See Table below.
 
 ### Table of data sources
 
@@ -33,7 +33,7 @@ States, and the NLCD Impervious Surface Descriptor product for 2016 for the cont
 | Block population counts, decennial Census | U.S. Census Bureau | 2010 | &mdash; | contiguous U.S. | &mdash; | https://www.census.gov/programs-surveys/decennial-census/decade.2010.html | 14 July 2021 | 
 | Census block and block group geographical boundaries | U.S. Census Bureau | 2016 | &mdash; | contiguous U.S. | unprojected latitude-longitude | https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.2016.html | 14 July 2021 | 
 | Impervious surface area | National Land Cover Database | 2016 | 30 m | contiguous U.S. | Albers equal-area | https://www.mrlc.gov/data/nlcd-2016-percent-developed-imperviousness-conus | 13 November 2020 |
-| Impervious surface descriptor | National Land Cover Database | 2016 | 30 m | contiguous U.S. | Albers equal-area | https://www.mrlc.gov/data/nlcd-2019-developed-imperviousness-descriptor-conus | 12 July 2021 |
+| Impervious surface descriptor | National Land Cover Database | 2016 | 30 m | contiguous U.S. | Albers equal-area | https://www.mrlc.gov/data/nlcd-2019-developed-imperviousness-descriptor-conus | 24 September 2019 |
 
 We performed the following steps for each county and county equivalent in the contiguous United States.
 
@@ -92,32 +92,31 @@ dir.create('temp_files')
 
 ## Pre-processing: download NLCD rasters and create virtual raster
 
-The following Bash code downloads and unzips the two NLCD rasters (impervious surface and impervious surface descriptor).
+The following Bash code unzips the two NLCD rasters (impervious surface and impervious surface descriptor) that are archived with the data.
+The MRLC website no longer hosts the version of NLCD 2016 (2019-04-05) that was used to generate our data product. Because of this we archived the zipped files with the data. Copy the two `.zip` archives into the folder `input_data/NLCD` within the current working directory before running the Bash code below.
 
 ```
-wget https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2016_impervious_l48_20210604.zip -P input_data/NLCD
-wget https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2016_impervious_descriptor_l48_20210604.zip -P input_data/NLCD
-unzip input_data/NLCD/nlcd_2016_impervious_l48_20210604.zip
-unzip input_data/NLCD/nlcd_2016_impervious_descriptor_l48_20210604.zip
+unzip input_data/NLCD/NLCD_2016_Impervious_L48_20190405.zip
+unzip input_data/NLCD/NLCD_2016_Impervious_descriptor_L48_20190405.zip
 ```
 
-The following code creates virtual rasters (`.vrt`) from the `.img` raster file. This allows parallel reads to be done on the NLCD raster so that multiple counties can be processed at the same time.
+The following code creates virtual rasters (`.vrt`) from the `.img` raster files. This allows parallel reads to be done on the NLCD raster so that multiple counties can be processed at the same time.
 
 ```
 library(gdalUtils)
 
 direc <- 'input_data/NLCD'
-imp_raster_file <- 'nlcd_2016_impervious_l48_20210604.img'
-imp_desc_raster_file <- 'nlcd_2016_impervious_descriptor_l48_20210604.img'
+imp_raster_imgfile <- 'NLCD_2016_Impervious_L48_20190405.img'
+imp_desc_raster_imgfile <- 'NLCD_2016_Impervious_descriptor_L48_20190405.img'
 
 # Run gdalbuildvrt with all defaults to just create a VRT that points to the IMG without any modification
-gdalbuildvrt(gdalfile = file.path(direc, imp_raster_file), output.vrt = file.path(direc, 'NLCD_2016_impervious.vrt'))
-gdalbuildvrt(gdalfile = file.path(direc, imp_desc_raster_file), output.vrt = file.path(direc, 'NLCD_2016_impervious_descriptor.vrt'))
+gdalbuildvrt(gdalfile = file.path(direc, imp_raster_imgfile), output.vrt = file.path(direc, 'NLCD_2016_impervious.vrt'))
+gdalbuildvrt(gdalfile = file.path(direc, imp_desc_raster_imgfile), output.vrt = file.path(direc, 'NLCD_2016_impervious_descriptor.vrt'))
 ```
 
 ## Function to create dasymetric population map for a single county
 
-The following function takes four inputs: the state FIPS code as a two-character string `stid`, the county FIPS code as a three-character string `ctyid`, the file path to the impervious surface raster `imp_raster_file`, and the path to the impervious surface descriptor `imp_desc_raster_file`.
+The following function takes four inputs: the state FIPS code as a two-character string `stid`, the county FIPS code as a three-character string `ctyid`, the file path to the impervious surface virtual raster `imp_raster_file`, and the path to the impervious surface descriptor virtual raster `imp_desc_raster_file`.
 It does the following steps for a single county (described more fully above):
 
 - Obtains 2016 ACS block group populations and 2010 decennial Census block populations using Census Bureau API
@@ -231,8 +230,8 @@ library(gdalUtils)
 library(rslurm)
 library(fasterize)
 
-imp_raster_file <- 'input_data/NLCD/nlcd_2016_impervious_l48_20210604.img'
-imp_desc_raster_file <- 'input_data/NLCD/nlcd_2016_impervious_descriptor_l48_20210604.img'
+imp_raster_file <- 'input_data/NLCD/NLCD_2016_impervious.vrt'
+imp_desc_raster_file <- 'input_data/NLCD/NLCD_2016_impervious_descriptor.vrt'
 
 # Get the fips codes for all counties
 fipscodes = data_frame(fips_codes)
