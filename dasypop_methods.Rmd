@@ -1,7 +1,7 @@
 ---
-title: "Dasymetric methods"
+title: "DasyPop methods"
 author: "Quentin D. Read"
-date: "8/26/2021"
+date: "10/25/2021"
 output: html_document
 ---
 
@@ -85,7 +85,6 @@ The following code carries out the steps described above.
 The following code will set up a directory structure in the local working directory in which to download the external data and write the output. Please modify as necessary.
 
 ```{r, eval = FALSE}
-dir.create('input_data')
 dir.create('input_data/NLCD')
 dir.create('output_tifs')
 dir.create('temp_files')
@@ -231,6 +230,9 @@ library(glue)
 library(gdalUtils)
 library(rslurm)
 library(fasterize)
+
+imp_raster_file <- 'input_data/NLCD/nlcd_2016_impervious_l48_20210604.img'
+imp_desc_raster_file <- 'input_data/NLCD/nlcd_2016_impervious_descriptor_l48_20210604.img'
 
 # Get the fips codes for all counties
 fipscodes = data_frame(fips_codes)

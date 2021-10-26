@@ -1,12 +1,12 @@
 ---
-title: "Supplement: Risk estimate case study"
+title: "Validation figure code"
 author: "Quentin D. Read"
-date: "8/12/2021"
+date: "10/25/2021"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 For the case study, we explored how the method used to dasymetrically estimate population distribution might affect policy-relevant inference. We investigated two key environmental hazards: wildfire and coastal flooding. Raster data products are available for both wildfire and coastal flooding. The U.S. Forest Service produced a map of wildfire hazard potential (WHP) for the contiguous United States at 270-meter pixel resolution, with five risk categories (Dillon et al. 2015). The U.S. Federal Emergency Management Agency (FEMA) has released flood risk data products for many U.S. counties, including the water surface elevation (WSE) for a 1% flood event (expected to occur once every 100 years). The WSE product is provided at 10-meter pixel resolution (FEMA 2021).
@@ -32,14 +32,43 @@ We obtained the WHP raster product for the entire contiguous United States, and 
 
 ## Procedure
 
-The following sections include a description of the methods as well as the R code. The random sampling of counties and downloading of the external data sources are not included in this notebook. Only the final section of the code (final data processing and figure generation) is run at the time the notebook is rendered.
+The following sections include a description of the methods as well as the R code. The random sampling of counties and downloading of the external data sources are not included in this notebook. Only the final section of the code (final data processing and figure generation) is run at the time the notebook is rendered. See the table at the bottom of this document for URLs where you can download the other external data. The only external data object provided is the USA county boundaries file geopackage, projected to Albers equal-area.
 
-This code block reads the county names and FIPS codes for the case studies from CSV files.
+### Note on downloading flood risk rasters
+
+Note in particular that the FEMA 1% flood water surface elevation raster files for each county need to be downloaded from the [FEMA flood map service center](https://msc.fema.gov/portal/advanceSearch). For each county, select the appropriate state name and county name, then select "All Jurisdictions" for the community name and press `Search`. Expand the `Flood Risk Products` folder, then the `Flood Risk Database` submenu. Download the compressed folder called `FRD_xxxxx_GeoTIFFs` where `xxxxx` is the county code, then extract it to `input_data/FRD` in the current working directory.
+
+This code block defines the county names and FIPS codes used for the case studies.
 
 ```{r}
-counties_wildfire <- read.csv('DASY/counties_wildfire.csv', colClasses = 'character')
-counties_flood <- read.csv('DASY/counties_flood_allfematifs.csv', colClasses = 'character')
+counties_wildfire <- read.delim(textConnection('
+county_name	state_name	state	state_code	county_code
+Daggett County	Utah	UT	49	009
+Torrance County	New Mexico	NM	35	057
+Duchesne County	Utah	UT	49	013
+Chelan County	Washington	WA	53	007
+Ada County	Idaho	ID	16	001'), colClasses = 'character')
+counties_flood <- read.delim(textConnection('
+state_name	county_name	fips	state_code	county_code	wse_filename
+Maryland	Anne Arundel	24003	24	003	input_data/FRD/FRD_24003C_Coastal_GeoTIFFs_20150909/WSE_01pct.tif
+Georgia	Bryan	13029	13	029	input_data/FRD/FRD_13029C_GeoTiffs_20131216/WSE_01pctTif.tif
+Florida	Flagler	12035	12	035	input_data/FRD/FRD_12035C_GeoTIFF_20180117/FRD_12035C_GeoTIFF_20180117/WSE_01pct.tif
+Maryland	Dorchester	24019	24	019	input_data/FRD/FRD_24019C_Coastal_GeoTIFFs_20160120/WSE_01pct.tif
+Alabama	Baldwin	01003	01	003	input_data/FRD/FRD_01003C_GeoTIFFS_20190321/FRD_01097C_GeoTIFFS_20190321/wse_01pct.tif'), colClasses = 'character')
 ```
+
+This code block creates the directory structure to hold the external data objects. Download and extract them to the appropriate directory.
+
+```{r}
+dir.create('input_data/epadasy')
+dir.create('input_data/huang_grid')
+dir.create('input_data/facebookpop')
+dir.create('input_data/WHP')
+dir.create('input_data/FRD')
+dir.create('input_data/countybounds')
+dir.create('input_data/countyrasters')
+```
+
 
 ### Initial raster processing
 
@@ -71,8 +100,8 @@ counties_wildfire <- counties_wildfire %>% mutate(fips = paste0(state_code, coun
 This code block creates individual GeoPackage shapefiles for the boundaries of each county (Albers equal-area projection). In addition a shapefile in unprojected latitude-longitude coordinates is created for each county for use with the unprojected population raster provided by Facebook.
 
 ```{r, eval = FALSE}
-gpkgpath <- "DASY/countybounds"
-raster_proj <- gdalsrsinfo('raw_data/facebookpop/population_usa_2019-07-01.vrt', as.CRS = TRUE)
+gpkgpath <- "input_data/countybounds"
+raster_proj <- gdalsrsinfo('input_data/facebookpop/population_usa_2019-07-01.vrt', as.CRS = TRUE)
 
 all_fips <- bind_rows(counties_flood, counties_wildfire) %>%
   select(state_code, county_code)
@@ -80,7 +109,7 @@ all_fips <- bind_rows(counties_flood, counties_wildfire) %>%
 pwalk(all_fips, function(state_code, county_code) {
   fips <- paste0(state_code, county_code)
   # Extract only one county from the all county geopackage
-  ogr2ogr(src_datasource_name = 'raw_data/landuse/USA/USA_county_2014_aea.gpkg',
+  ogr2ogr(src_datasource_name = 'input_data/USA_county_2014_aea.gpkg',
           dst_datasource_name = glue('{gpkgpath}/county{fips}.gpkg'),
           overwrite = TRUE, f = 'GPKG', where = glue('fips=\'{fips}\''))
   # Project the single county GPKG to the geographic CRS used by Facebook
@@ -93,33 +122,33 @@ pwalk(all_fips, function(state_code, county_code) {
 Our dasymetric rasters and the flood risk rasters are already in separate files for each county. The following code block creates separate raster files for the wildfire raster, the EPA dasymetric raster, the Facebook raster, and the Huang et al. population grid. We also ensure that our dasymetric raster matches the long-lat geographic CRS by creating a new version.
 
 ```{r, eval = FALSE}
-tifpath <- "DASY/countyrasters"
-gpkgpath <- "DASY/countybounds"
+tifpath <- "input_data/countyrasters"
+gpkgpath <- "input_data/countybounds"
 
 pwalk(all_fips, function(state_code, county_code) {
   fips <- paste0(state_code, county_code)
   # Wildfire
-  gdalwarp(srcfile = 'DASY/whp/Data/whp2020_GeoTIF/whp2020_cls_conus.tif',
+  gdalwarp(srcfile = 'input_data/WHP/Data/whp2020_GeoTIF/whp2020_cls_conus.tif',
            dstfile = glue('{tifpath}/county{fips}_wildfire.tif'),
            overwrite = TRUE, crop_to_cutline = TRUE,
            cutline = glue('{gpkgpath}/county{fips}.gpkg'))
   # EPA Dasymetric
-  gdalwarp(srcfile = 'DASY/epadasy/dasymetric_us_20160208/dasymetric_us_20160208.tif',
+  gdalwarp(srcfile = 'input_data/epadasy/dasymetric_us_20160208/dasymetric_us_20160208.tif',
            dstfile = glue('{tifpath}/county{fips}_epadasy.tif'),
            overwrite = TRUE, crop_to_cutline = TRUE,
            cutline = glue('{gpkgpath}/county{fips}.gpkg'))
   # Facebook Dasymetric
-  gdalwarp(srcfile = 'raw_data/facebookpop/population_usa_2019-07-01.vrt',
+  gdalwarp(srcfile = 'input_data/facebookpop/population_usa_2019-07-01.vrt',
            dstfile = glue('{tifpath}/county{fips}_fblonglat.tif'),
            overwrite = TRUE, crop_to_cutline = TRUE,
            cutline = glue('{gpkgpath}/county{fips}longlat.gpkg'))
   # Huang Dasymetric
-  gdalwarp(srcfile = 'DASY/huang_grid/PopGrid.tif',
+  gdalwarp(srcfile = 'input_data/huang_grid/PopGrid.tif',
            dstfile = glue('{tifpath}/county{fips}_huangdasy.tif'),
            overwrite = TRUE, crop_to_cutline = TRUE,
            cutline = glue('{gpkgpath}/county{fips}.gpkg'))
   # Our dasymetric, crop to cutline with the longlat object
-  gdalwarp(srcfile = glue('DASY/tifs/neon-dasy-{state_code}-{county_code}.tif'),
+  gdalwarp(srcfile = glue('output_tifs/neon-dasy-{state_code}-{county_code}.tif'),
            dstfile = glue('{tifpath}/county{fips}_dasy.tif'),
            overwrite = TRUE, crop_to_cutline = TRUE, tr = c(30, 30),
            cutline = glue('{gpkgpath}/county{fips}longlat.gpkg'))
@@ -129,8 +158,8 @@ pwalk(all_fips, function(state_code, county_code) {
 In this code block, the environmental and population rasters are read into R as `stars` objects.
 
 ```{r, eval = FALSE}
-tifpath <- 'DASY/countyrasters'
-dasypath <- 'DASY/tifs'
+tifpath <- 'input_data/countyrasters'
+dasypath <- 'output_tifs'
 
 wildfire_rasters <- map(counties_wildfire$fips, ~ read_stars(glue('{tifpath}/county{.}_wildfire.tif')))
 ourdasy_rasters_wf <- map(counties_wildfire$fips, ~ read_stars(glue('{dasypath}/neon-dasy-{substr(., 1, 2)}-{substr(., 3, 5)}.tif')))
@@ -181,7 +210,7 @@ cleanup_files(sjob_wild)
 
 make_poly_and_raster <- function(wse_filename, fips) {
   flood_raster <- raster(wse_filename)
-  file_name <- glue('DASY/countyrasters/county{fips}_floodbinary.tif')
+  file_name <- glue('input_data/countyrasters/county{fips}_floodbinary.tif')
   if (!file.exists(file_name)) {
     flood_notna_raster <- st_as_stars(!is.na(flood_raster))
     write_stars(flood_notna_raster, file_name)
@@ -382,7 +411,7 @@ flood_grandtotals <- counties_flood %>%
   mutate(listcol = flood_grandtotals) %>%
   unnest(cols = listcol)
 
-save(list = c('wildfire_grandtotals', 'flood_grandtotals'), file = 'DASY/grandtotals_finalfig.RData')
+save(list = c('wildfire_grandtotals', 'flood_grandtotals'), file = 'temp_files/grandtotals_finalfig.RData')
 ```
 
 ## Figure
@@ -390,7 +419,7 @@ save(list = c('wildfire_grandtotals', 'flood_grandtotals'), file = 'DASY/grandto
 In this code block, we prepare the data for figure generation. First, we reshape the data to long form for plotting. We also simplify the wildfire risk classes into binary by summing all individuals in risk classes 3, 4, and 5 (medium to very high risk), considering them all to be "at risk."
 
 ```{r, message = FALSE, warning = FALSE}
-load(file = 'DASY/grandtotals_finalfig.RData')
+load(file = 'temp_files/grandtotals_finalfig.RData')
 
 label_names <- c('This study', 'U.S. EPA', 'Huang et al.', 'Facebook', 'Block group area weighting')
 estimate_labels <- data.frame(estimate = c('our_dasy', 'epa_dasy', 'huang', 'fb', 'blockgroup'),
