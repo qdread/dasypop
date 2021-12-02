@@ -1,8 +1,10 @@
 # DasyPop: A Dasymetric Population Map Based on US Census Data and 30-m Gridded Estimates of Impervious Surface
 
+[![DOI](https://zenodo.org/badge/420281258.svg)](https://zenodo.org/badge/latestdoi/420281258)
+
 This code repository accompanies a dataset and article published in *Scientific Data*.
 
-Authors:
+## Authors
 
 - Rachel Swanwick (SESYNC; University of Vermont)
 - Quentin D. Read (SESYNC; USDA Agricultural Research Service)
@@ -27,7 +29,7 @@ See the individual notebooks for instructions on how to run the code and downloa
 
 ### Code
 
-Swanwick, R. H., Q. D. Read, S. Guinn, M. Williamson, K. L. Hondula, and A. Elmore. 2021. Code accompanying "DasyPop: A Dasymetric Population Map Based on US Census Data and 30-m Gridded Estimates of Impervious Surface."
+Swanwick, R. H., Q. D. Read, S. Guinn, M. Williamson, K. L. Hondula, and A. Elmore. 2021. Code accompanying "DasyPop: A Dasymetric Population Map Based on US Census Data and 30-m Gridded Estimates of Impervious Surface." DOI:10.5281/zenodo.5750666. 
 
 ### Dataset and article
 
