@@ -1,9 +1,13 @@
 ---
-title: "DasyPop methods"
+title: "U.G.L.I. methods"
 author: "Quentin D. Read"
 date: "10/25/2021"
 output: html_document
 ---
+
+This document contains code required to reproduce the data product presented in the article:
+
+Rachel H. Swanwick, Quentin D. Read, Steven Guinn, Matt Williamson, Kelly L. Hondula, and Andrew Elmore. 2022. Dasymetric population mapping based on U.S. Census data and 30-m gridded estimates of impervious surface. *Scientific Data*.
 
 # Methods
 

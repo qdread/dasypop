@@ -1,4 +1,4 @@
-# DasyPop: A Dasymetric Population Map Based on US Census Data and 30-m Gridded Estimates of Impervious Surface
+# U.G.L.I. (Updatable, Gridded, Lightweight, Impervious) Population Dataset: dasymetric population mapping based on U.S. Census data and 30-m gridded estimates of impervious surface
 
 [![DOI](https://zenodo.org/badge/420281258.svg)](https://zenodo.org/badge/latestdoi/420281258)
 
@@ -29,10 +29,10 @@ See the individual notebooks for instructions on how to run the code and downloa
 
 ### Code
 
-Swanwick, R. H., Q. D. Read, S. Guinn, M. Williamson, K. L. Hondula, and A. Elmore. 2021. Code accompanying "DasyPop: A Dasymetric Population Map Based on US Census Data and 30-m Gridded Estimates of Impervious Surface." DOI:10.5281/zenodo.5750666. 
+Swanwick, R. H., Q. D. Read, S. Guinn, M. Williamson, K. L. Hondula, and A. Elmore. 2021. Code accompanying "Dasymetric Population Mapping Based on US Census Data and 30-m Gridded Estimates of Impervious Surface." DOI:10.5281/zenodo.5750666. 
 
 ### Dataset and article
 
 Citation will be included here when the dataset and article are accepted for publication.
 
-*Last updated by QDR, 02 December 2021*
+*Last updated by QDR, 10 January 2022*
