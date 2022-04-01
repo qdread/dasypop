@@ -1,0 +1,114 @@
+---
+title: "Tables of relative differences vs. na&#239;ve method"
+author: "Quentin D. Read"
+date: "3/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, echo = FALSE)
+```
+
+This is another way of showing the performance of our method relative to the other dasymetric mapping methods in estimating the number of people exposed to flood and wildfire risk at the county level. Here I am presenting the differences of the four dasymetric mapping methods' esimates of the number of at-risk people. The differences are all relative to the "naive" method of assuming that populations are uniformly distributed across the geographic areas of each block group.
+
+Again this is not a true validation because there is no known true value. However it is still informative. 
+
+## Take-home messages
+
+IMHO the take-home messages are:
+
+- For floods, the naive method uniformly "overestimates" the number of people at risk for flood (all relative differences are < 0 in all counties we estimated). Our method is more or less comparable to the others, agreeing with the other three that the naive method is an overestimate in all 5 cases. The degree to which it adjusts the estimate relative to the naive method is about the same as the other three methods.
+- For wildfires, the naive method is not always an "overestimate" or "underestimate." However our method agrees with the three others in 3 of the 5 cases. However our method does not agree with the other three very well 
+
+Above, the term "overestimate" is in quotes because again we don't know the true value so we don't know if it is really an overestimate. It's just higher than the other estimates.
+
+## Potential interpretation
+
+Speculation on why our method does not agree as well with the others for two of the wildfire counties:
+
+Our model does not agree well with the others in the case of Daggett Co., Utah (a very sparsely populated county), potentially because of increased variance between methods due to different sources of input data being magnified in such a low-population county. This is also the case for Duchesne Co., Utah (again relatively sparsely populated). Overall it could be argued that the dasymetric-adjusted estimate of wildfire risk is less reliable overall because there is less agreement between the methods, not just our method. Wildfire risk is a lot patchier so most likely it is much more sensitive to minor differences in the input data, which again are magnified in small and sparsely-populated counties.
+
+```{r}
+load('~/temp/grandtotals_finalfig.RData')
+
+library(tidyverse)
+library(glue)
+library(gt)
+
+counties_use_fl <- c('24019', '13029', '12035', '01003', '24003')
+counties_use_wf <- c('49009', '35057', '49013', '53007', '16001')
+
+flood_reshaped <- flood_grandtotals %>%
+  mutate(county_label = glue('{county_name}, {state_name}')) %>%
+  filter(env_class == '1', fips %in% counties_use_fl) %>%
+  select(county_label, total_pop, our_dasy, epa_dasy, huang, fb, blockgroup) %>%
+  pivot_longer(-c(county_label, total_pop, blockgroup), names_to = 'method') %>%
+  mutate(pct_diff = 100 * (value-blockgroup)/blockgroup)
+
+flood_formatted <- flood_reshaped %>%
+  mutate(value_diff = glue('{round(value, 0)} ({ifelse(pct_diff>0, "+", "")}{round(pct_diff, 1)}%)'), blockgroup = round(blockgroup)) %>%
+  select(county_label, total_pop, method, blockgroup, value_diff) %>%
+  pivot_wider(names_from = method, values_from = value_diff) %>%
+  arrange(total_pop)
+
+wildfire_reshaped <- wildfire_grandtotals %>%
+  mutate(county_label = glue('{county_name}, {state_name}')) %>%
+  filter(env_class %in% as.character(3:5), fips %in% counties_use_wf) %>%
+  group_by(county_label, total_pop) %>%
+  summarize(across(c(our_dasy, epa_dasy, huang, fb, blockgroup), sum)) %>%
+  pivot_longer(-c(county_label, total_pop, blockgroup), names_to = 'method') %>%
+  mutate(pct_diff = 100 * (value-blockgroup)/blockgroup) 
+
+wildfire_formatted <- wildfire_reshaped %>%
+  mutate(value_diff = glue('{round(value, 0)} ({ifelse(pct_diff>0, "+", "")}{round(pct_diff, 1)}%)'), blockgroup = round(blockgroup)) %>%
+  select(county_label, total_pop, method, blockgroup, value_diff) %>%
+  pivot_wider(names_from = method, values_from = value_diff) %>%
+  arrange(total_pop)
+```
+
+```{r}
+# Compute color mapping to be consistent across tables
+all_pct <- c(flood_reshaped$pct_diff, wildfire_reshaped$pct_diff)
+pct_limits <- c(-1, 1) * max(abs(all_pct)) # Ensures color scale will be centered at zero
+col_map <- scales::col_numeric('RdYlGn', pct_limits)
+
+flood_colormap <- flood_reshaped %>%
+  mutate(color = col_map(pct_diff)) %>%
+  select(county_label, method, color) 
+
+wildfire_colormap <- wildfire_reshaped %>%
+  mutate(color = col_map(pct_diff)) %>%
+  select(county_label, method, color)
+```
+
+
+```{r}
+flood_table <- gt(flood_formatted) %>%
+  cols_label(county_label = 'County', total_pop = 'Total population', blockgroup = html('Na&#239;ve estimate'),
+             our_dasy = 'Present study', epa_dasy = 'EPA', huang = 'Microsoft', fb = 'Facebook') %>%
+  tab_header('Flood risk estimate comparison') %>%
+  tab_options(table.border.bottom.width = '20px', table.border.bottom.color = 'white') 
+
+# Iteratively add cell color maps to cells
+for (i in 1:nrow(flood_colormap)) {
+  flood_table <- flood_table %>% tab_style(cell_fill(flood_colormap$color[i], alpha = 0.4), cells_body(columns = flood_colormap$method[i], row = county_label == flood_colormap$county_label[i]))
+}
+
+flood_table
+```
+
+
+```{r}
+wildfire_table <- gt(ungroup(wildfire_formatted)) %>%
+  cols_label(county_label = 'County', total_pop = 'Total population', blockgroup = html('Na&#239;ve estimate'),
+             our_dasy = 'Present study', epa_dasy = 'EPA', huang = 'Microsoft', fb = 'Facebook') %>%
+  tab_header('Wildfire risk estimate comparison') 
+
+# Iteratively add cell color maps to cells
+for (i in 1:nrow(wildfire_colormap)) {
+  wildfire_table <- wildfire_table %>% tab_style(cell_fill(wildfire_colormap$color[i], alpha = 0.4), cells_body(columns = wildfire_colormap$method[i], row = county_label == wildfire_colormap$county_label[i]))
+}
+
+wildfire_table
+```
+
