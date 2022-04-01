@@ -86,7 +86,7 @@ p_wildfire <- wildfire_risks_reduced %>%
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         axis.title.y = element_blank(),
-        legend.position = c(0.8, 0.2),
+        legend.position = c(0.87, 0.2),
         legend.title = element_blank(),
         legend.text = element_text(size = rel(0.5)),
         legend.key.size = unit(0.34, 'cm'),
@@ -134,4 +134,4 @@ p_bottom <- ggdraw(p_wildfire) +
 
 p_all <- plot_grid(p_top, p_bottom, nrow = 2)
 
-ggsave('~/temp/logscale_pop_fig_with_insets.png', p_all, height = 6, width = 6, dpi = 400)
+ggsave('~/temp/percentagediff_fig_with_insets.png', p_all, height = 6, width = 6, dpi = 400)
