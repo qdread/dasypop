@@ -131,8 +131,10 @@ It does the following steps for a single county (described more fully above):
 - For each remaining impervious surface area pixel, generates dasymetric population estimate by multiplying block group population by fraction of block group impervious area contained within that pixel
 - Writes the result to a GeoTIFF file
 
-*Note*: This requires a valid U.S. Census Bureau API key to be saved in the current working directory in a file named `censusapikey.txt`.
-Sign up for a key using [the Census API key signup form](https://api.census.gov/data/key_signup.html).
+> *Note*: This requires a valid U.S. Census Bureau API key to be saved in the current working directory in a file named `censusapikey.txt`.
+> Sign up for a key using [the Census API key signup form](https://api.census.gov/data/key_signup.html).
+
+> *Note*: Currently, pixels labeled 1-6 in the NLCD 2016 impervious descriptor are considered roads and removed before distributing population among the remaining pixels. However, it may also be advisable to remove pixels labeled 7, 8, 11, and 12. If this is desired, modify the line creating the object `reclass.table` as follows: `reclass.table <- matrix(c(1,8,1,9,10,NA,11,12,1,13,14,NA), ncol = 3, byrow = TRUE)`
 
 ```
 Get_Dasy_Data <- function(stid, ctyid, imp_raster_file, imp_desc_raster_file) {
@@ -185,7 +187,7 @@ Get_Dasy_Data <- function(stid, ctyid, imp_raster_file, imp_desc_raster_file) {
   imp.surf.mask <- mask(imp.surf.crop, as(pop.projected, "Spatial")) 
 
   # Mask out primary, secondary, and urban tertiary roads
-  # Reclassify: keep classes 1-6 (non-road) and drop 7-14 (road)
+  # Reclassify: set classes 1-6 (road) to 1 and classes 7-14 to NA (non=road)
   reclass.table <- matrix(c(1,6,1,7,14,NA), ncol = 3, byrow = TRUE) 
   
   # Reclassify descriptor file and reproject it.
@@ -287,6 +289,8 @@ The following code block manually fixes the inconsistencies in Oglala Lakota Cou
 Refer to pg. 3 of [this documentation](https://www.ddorn.net/data/FIPS_County_Code_Changes.pdf) to see what happened to those counties since 2010.
 For Oglala Lakota, we download data for FIPS code 46113 for 2010, and 46102 for 2016.
 For Bedford, we merge data from 51515 and 51019 for 2010, and download data for 51019 for 2016.
+
+> *Note*: Currently, pixels labeled 1-6 in the NLCD 2016 impervious descriptor are considered roads and removed before distributing population among the remaining pixels. However, it may also be advisable to remove pixels labeled 7, 8, 11, and 12. If this is desired, modify the line creating the object `reclass.table` as follows: `reclass.table <- matrix(c(1,8,1,9,10,NA,11,12,1,13,14,NA), ncol = 3, byrow = TRUE)`
 
 ```
 bad_counties <- data.frame(stid = c('46','46','51'),

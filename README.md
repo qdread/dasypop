@@ -25,14 +25,20 @@ The code is in three Markdown notebooks containing a combination of R code and B
 
 See the individual notebooks for instructions on how to run the code and download the necessary external data. The code in the `dasypop_methods.md` notebook should be run first.
 
-## Recommended citation
+## Recommended citations
+
+The following citations are recommended for the article published in *Scientific Data*, the permanent stable copy on Zenodo of the GitHub repository containing the code, and the dataset published on FigShare.
+
+### Article
+
+Swanwick, R. H., Q. D. Read, S. M. Guinn, M. A. Williamson, K. L. Hondula, and A. J. Elmore. 2022. Dasymetric population mapping based on US Census data and 30-m gridded estimates of impervious surface. *Scientific Data* 9:523. DOI: 10.1038/s41597-022-01603-z. 
 
 ### Code
 
 Swanwick, R. H., Q. D. Read, S. Guinn, M. Williamson, K. L. Hondula, and A. Elmore. 2021. Code accompanying "Dasymetric Population Mapping Based on US Census Data and 30-m Gridded Estimates of Impervious Surface." DOI:10.5281/zenodo.5750666. 
 
-### Dataset and article
+### Dataset
 
-Citation will be included here when the dataset and article are accepted for publication.
+Elmore, Andrew J.; Swanwick, Rachel; Guinn, Steven M; Read, Quentin D; Williamson, Matt A; Hondula, Kelly L (2022): Dasymetric Population Mapping Based on US Census Data and 30-m Gridded Estimates of Impervious Surface. figshare. Dataset. DOI: 10.6084/m9.figshare.20097086.v1.
 
-*Last updated by QDR, 10 January 2022*
+*Last updated by QDR, 08 March 2023*
